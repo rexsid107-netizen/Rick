@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}{{ doc.title }} — SciBot Platform{% endblock %}
+{% block content %}
+
+<a class="back-link" href="{{ url_for('index') }}">&larr; Library</a>
+
+<div class="doc-header">
+    <h1>{{ doc.title }}</h1>
+    <div class="subhead">{{ doc.file_name }} · {{ "{:,}".format(doc.len_chars) }} chars · doc #{{ doc.doc_id }}</div>
+</div>
+
+<div class="action-row">
+    <form action="{{ url_for('classify', doc_id=doc.doc_id) }}" method="post">
+        <button type="submit">Classify</button>
+    </form>
+    <form action="{{ url_for('summarize', doc_id=doc.doc_id) }}" method="post">
+        <button type="submit" class="secondary">Summarize</button>
+    </form>
+    <form action="{{ url_for('document_delete', doc_id=doc.doc_id) }}" method="post"
+          onsubmit="return confirm('Delete this document?');">
+        <button type="submit" class="warn">Delete</button>
+    </form>
+</div>
+
+{% if classification %}
+<div class="result-block">
+    <span class="result-label">Category: {{ classification.category }}</span>
+    {{ classification.full_response }}
+</div>
+{% endif %}
+
+{% if summary %}
+<div class="result-block">
+    <span class="result-label">Summary</span>
+    {{ summary.summary }}
+</div>
+{% endif %}
+
+<span class="result-label" style="margin-top:8px;">Extracted text (preview)</span>
+<div class="text-preview">{{ doc.text_content[:4000] }}{% if doc.text_content|length > 4000 %}…{% endif %}</div>
+
+{% endblock %}
