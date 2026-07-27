@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Rank — SciBot Platform{% endblock %}
+{% block content %}
+
+<h1>Pairwise ranking</h1>
+<div class="subhead">head-to-head impact comparisons, scored by Claude</div>
+
+<div class="panel">
+    {% if documents|length < 2 %}
+        <div class="empty-state">Upload at least two documents to run a comparison.</div>
+    {% else %}
+    <form action="{{ url_for('compare') }}" method="post" class="compare-form">
+        <div>
+            <label>Publication A</label>
+            <select name="doc_id_a" required>
+                {% for doc in documents %}
+                <option value="{{ doc.doc_id }}">#{{ doc.doc_id }} — {{ doc.title[:50] }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label>Publication B</label>
+            <select name="doc_id_b" required>
+                {% for doc in documents %}
+                <option value="{{ doc.doc_id }}">#{{ doc.doc_id }} — {{ doc.title[:50] }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit">Compare</button>
+    </form>
+    {% endif %}
+</div>
+
+<h1 style="font-size:22px;">Current standings</h1>
+{% if rankings %}
+<table class="ranking">
+    <thead>
+        <tr><th>#</th><th>Document</th><th>Wins</th><th>Losses</th><th>Ties</th></tr>
+    </thead>
+    <tbody>
+        {% for r in rankings %}
+        <tr>
+            <td class="rank-num">{{ loop.index }}</td>
+            <td><a class="doc-title" href="{{ url_for('document_detail', doc_id=r.doc_id) }}">{{ r.title[:60] }}</a></td>
+            <td>{{ r.wins }}</td>
+            <td>{{ r.losses }}</td>
+            <td>{{ r.ties }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<div class="empty-state">No comparisons run yet.</div>
+{% endif %}
+
+{% if history %}
+<h1 style="font-size:22px;">Comparison history</h1>
+{% for h in history %}
+<div class="history-item">
+    #{{ h.doc_id_a }} vs #{{ h.doc_id_b }} → winner: {{ h.winner }} · {{ h.datetime_added[:16] }}
+</div>
+{% endfor %}
+{% endif %}
+
+{% endblock %}
