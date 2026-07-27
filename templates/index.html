@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Library — SciBot Platform{% endblock %}
+{% block content %}
+
+<h1>Document library</h1>
+<div class="subhead">upload PDFs · classify · summarize · rank</div>
+
+{% if not has_key %}
+<div class="key-warning">
+    No Anthropic API key configured. Copy <code>config.example.json</code> to <code>config.json</code>
+    and paste in your key, or set the <code>ANTHROPIC_API_KEY</code> environment variable.
+    Uploads still work without a key — only the bot actions need it.
+</div>
+{% endif %}
+
+<div class="panel">
+    <form action="{{ url_for('upload') }}" method="post" enctype="multipart/form-data">
+        <div class="upload-row">
+            <input type="file" name="pdf_file" accept="application/pdf" multiple required>
+            <button type="submit">Upload</button>
+        </div>
+    </form>
+</div>
+
+{% if documents %}
+<ul class="doc-list">
+    {% for doc in documents %}
+    <li class="doc-row">
+        <div>
+            <a class="doc-title" href="{{ url_for('document_detail', doc_id=doc.doc_id) }}">{{ doc.title }}</a>
+            <div class="doc-meta">{{ doc.file_name }} · {{ "{:,}".format(doc.len_chars) }} chars · added {{ doc.datetime_added[:16] }}</div>
+        </div>
+        <span class="tag">#{{ doc.doc_id }}</span>
+    </li>
+    {% endfor %}
+</ul>
+{% else %}
+<div class="empty-state">No documents yet. Upload a PDF above to get started.</div>
+{% endif %}
+
+{% endblock %}
