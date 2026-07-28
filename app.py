@@ -3,12 +3,13 @@
 """
 app.py
 SciBot Platform: a self-contained web app for uploading scientific PDFs and running
-classify / rank / summarize bots against them, powered by Claude.
+classify / rank / summarize bots against them, powered by Gemini.
 
 Run with:  python app.py
 Then open: http://127.0.0.1:5000
 """
 
+import os
 from pathlib import Path
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from werkzeug.utils import secure_filename
@@ -25,17 +26,17 @@ UPLOAD_DIR.mkdir(exist_ok=True)
 ALLOWED_EXTENSIONS = {"pdf"}
 
 app = Flask(__name__)
-app.secret_key = "dev-key-change-me"  # only matters for flash messages
+app.secret_key = os.environ.get("FLASK_SECRET_KEY", "dev-key-change-me")
 app.config["MAX_CONTENT_LENGTH"] = 50 * 1024 * 1024  # 50 MB per upload
 
 db.init_db()
-settings = cfg.load_config()
 
 
 def get_llm_client():
-    if not settings.get("anthropic_api_key"):
+    settings = cfg.load_config()  # re-read each time so hosting-dashboard env vars are picked up live
+    if not settings.get("gemini_api_key"):
         return None
-    return LLMClient(api_key=settings["anthropic_api_key"], model=settings.get("model", "claude-sonnet-4-5"))
+    return LLMClient(api_key=settings["gemini_api_key"], model=settings.get("model", "gemini-2.0-flash"))
 
 
 def allowed_file(filename):
@@ -48,7 +49,7 @@ def allowed_file(filename):
 @app.route("/")
 def index():
     documents = db.get_documents()
-    has_key = bool(settings.get("anthropic_api_key"))
+    has_key = bool(cfg.load_config().get("gemini_api_key"))
     return render_template("index.html", documents=documents, has_key=has_key)
 
 
@@ -107,7 +108,7 @@ def document_delete(doc_id):
 def classify(doc_id):
     llm = get_llm_client()
     if llm is None:
-        flash("No Anthropic API key configured. See config.example.json / README.")
+        flash("No Gemini API key configured. See config.example.json / README.")
         return redirect(url_for("document_detail", doc_id=doc_id))
 
     doc = db.get_document(doc_id)
@@ -123,7 +124,7 @@ def classify(doc_id):
 def summarize(doc_id):
     llm = get_llm_client()
     if llm is None:
-        flash("No Anthropic API key configured. See config.example.json / README.")
+        flash("No Gemini API key configured. See config.example.json / README.")
         return redirect(url_for("document_detail", doc_id=doc_id))
 
     doc = db.get_document(doc_id)
@@ -142,7 +143,7 @@ def compare():
     if request.method == "POST":
         llm = get_llm_client()
         if llm is None:
-            flash("No Anthropic API key configured. See config.example.json / README.")
+            flash("No Gemini API key configured. See config.example.json / README.")
             return redirect(url_for("compare"))
 
         doc_id_a = int(request.form["doc_id_a"])
@@ -168,4 +169,6 @@ def compare():
 
 
 if __name__ == "__main__":
-    app.run(debug=True, host="127.0.0.1", port=5000)
+    port = int(os.environ.get("PORT", 5000))
+    debug = os.environ.get("FLASK_DEBUG", "1") == "1"
+    app.run(debug=debug, host="0.0.0.0", port=port)
