@@ -15,8 +15,8 @@ CONFIG_FILE = Path(__file__).parent / "config.json"
 
 def load_config():
     config = {
-        "anthropic_api_key": os.environ.get("ANTHROPIC_API_KEY", ""),
-        "model": os.environ.get("SCIBOT_MODEL", "claude-sonnet-4-5"),
+        "gemini_api_key": os.environ.get("GEMINI_API_KEY", ""),
+        "model": os.environ.get("SCIBOT_MODEL", "gemini-2.0-flash"),
     }
 
     if CONFIG_FILE.exists():
