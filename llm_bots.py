@@ -3,14 +3,15 @@
 """
 llm_bots.py
 Classify / Compare / Summarize bots, adapted from the uploaded tool_bots.py and bots.py.
-Ported to the current Anthropic Messages API (client.messages.create), since the original
-code used the deprecated client.completion()/HUMAN_PROMPT style.
 
-Categories are configurable in config.py.
+Runs on Google's Gemini API (has a genuinely free tier - no card needed), via
+Google AI Studio API keys. See https://aistudio.google.com/apikey
+
+Categories are configurable below.
 """
 
 import re
-import anthropic
+import google.generativeai as genai
 
 DEFAULT_CATEGORIES = """self-assembly: Publications related to self-assembling materials (block copolymer thin films, nanoparticle superlattices, DNA self-assembly, etc.)
 
@@ -24,21 +25,16 @@ other: Anything that does not fit the above categories."""
 
 
 class LLMClient:
-    """Thin wrapper around the Anthropic Messages API."""
+    """Thin wrapper around the Google Gemini API."""
 
-    def __init__(self, api_key, model="claude-sonnet-4-5", max_tokens=1200):
-        self.client = anthropic.Anthropic(api_key=api_key)
-        self.model = model
-        self.max_tokens = max_tokens
+    def __init__(self, api_key, model="gemini-2.0-flash"):
+        genai.configure(api_key=api_key)
+        self.model_name = model
 
     def chat(self, system, user_content):
-        response = self.client.messages.create(
-            model=self.model,
-            max_tokens=self.max_tokens,
-            system=system,
-            messages=[{"role": "user", "content": user_content}],
-        )
-        return "".join(block.text for block in response.content if block.type == "text")
+        model = genai.GenerativeModel(model_name=self.model_name, system_instruction=system)
+        response = model.generate_content(user_content)
+        return response.text
 
 
 class ClassifyBot:
